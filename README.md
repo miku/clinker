@@ -1,7 +1,7 @@
 # clinker
 
 A command line link checker using HTTP HEAD (prerelease [linux
-binary](https://github.com/miku/clinker/releases/tag/v0.0.0).
+binary](https://github.com/miku/clinker/releases/tag/v0.0.0)).
 
 ```
 $ echo '{"url": "http://google.com"}' | clinker | jq .
