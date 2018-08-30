@@ -89,6 +89,7 @@ func main() {
 					Payload: payload,
 				}
 				results = append(results, result)
+				log.Printf("failed to create request: %v", err)
 				continue
 			}
 			resp, err := client.Do(req)
@@ -100,6 +101,7 @@ func main() {
 					Payload: payload,
 				}
 				results = append(results, result)
+				log.Printf("request failed: %v", err)
 				continue
 			}
 			defer resp.Body.Close()
