@@ -1,2 +1,7 @@
 # clinker
-An experimental bot for checking links in an index. 
+
+A command line link checker.
+
+```
+$ cat listofurls.txt | clinker
+```
