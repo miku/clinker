@@ -80,6 +80,7 @@ func main() {
 		var results []Result
 
 		for _, v := range links {
+			// XXX: GET with something like SectionReader?
 			req, err := http.NewRequest(*method, v, nil)
 			if err != nil {
 				result := Result{
