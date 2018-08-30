@@ -1,16 +1,25 @@
 # clinker
 
-A command line link checker.
+A command line link checker using HTTP HEAD.
 
 ```
-$ cat listofurls.txt | clinker
+$ echo '{"url": "http://google.com"}' | clinker | jq .
+{
+  "link": "http://google.com",
+  "status": 200,
+  "t": "2018-08-30T14:50:16.574565848+02:00",
+  "comment": "HEAD",
+  "payload": {
+    "url": "http://google.com"
+  }
+}
 ```
 
-## Check links in an SOLR index
+## Checking links in an SOLR index
 
-The clinker command accepts JSON, so you can transmit more than just a link -
-but clinker will need the key under which the URLs are stored.
+Using in combination with [solrdump](https://github.com/ubleipzig/solrdump):
 
 ```
-$ solrdump -q "source_id:169" -fl "id,url" -server 10.1.1.1:1234/solr/biblio | clinker -j url
+$ solrdump -q "source_id:169" -fl "id,url" -server 10.1.1.1:1234/solr/biblio | clinker > report.ndj
 ```
+
