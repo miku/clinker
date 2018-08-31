@@ -16,13 +16,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var Version = "0.1.0"
+
 var (
-	method     = flag.String("X", "GET", "HTTP method")
-	urlKey     = flag.String("j", "url", "key under which to find the URLs to check")
-	verbose    = flag.Bool("verbose", false, "verbose output")
-	numWorkers = flag.Int("w", runtime.NumCPU(), "number of workers")
-	bestEffort = flag.Bool("b", false, "skip invalid input")
-	batchSize  = flag.Int("size", 100, "batch urls")
+	method      = flag.String("X", "GET", "HTTP method")
+	urlKey      = flag.String("j", "url", "key under which to find the URLs to check")
+	verbose     = flag.Bool("verbose", false, "verbose output")
+	numWorkers  = flag.Int("w", runtime.NumCPU(), "number of workers")
+	bestEffort  = flag.Bool("b", false, "skip invalid input")
+	batchSize   = flag.Int("size", 100, "batch urls")
+	showVersion = flag.Bool("version", false, "show version")
 )
 
 // worker is a vanilla worker working on batches of lines. Each line can result
@@ -93,6 +96,7 @@ func worker(queue chan []string, resultc chan []Result, wg *sync.WaitGroup) {
 					log.Printf("failed to create request: %v", err)
 					continue
 				}
+				req.Header.Set("User-Agent", "clinker/%s (https://git.io/fAC27)", Version)
 				resp, err := client.Do(req)
 				if err != nil {
 					result := Result{
@@ -147,6 +151,11 @@ type Result struct {
 
 func main() {
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(Version)
+		os.Exit(0)
+	}
 
 	br := bufio.NewReader(os.Stdin)
 	bw := bufio.NewWriter(os.Stdout)
