@@ -21,11 +21,12 @@ var (
 
 // Result of a link check.
 type Result struct {
-	Link       string      `json:"link"`
-	StatusCode int         `json:"status"`
-	T          time.Time   `json:"t"`
-	Comment    string      `json:"comment"`
-	Payload    interface{} `json:"payload"`
+	Link       string      `json:"link,omitempty"`
+	StatusCode int         `json:"status,omitempty"`
+	T          time.Time   `json:"t,omitempty"`
+	Comment    string      `json:"comment,omitempty"`
+	Payload    interface{} `json:"payload,omitempty"`
+	Header     http.Header `json:"header,omitempty"`
 }
 
 func main() {
@@ -100,18 +101,22 @@ func main() {
 					T:       time.Now(),
 					Comment: err.Error(),
 					Payload: payload,
+					Header:  resp.Header,
 				}
 				results = append(results, result)
 				log.Printf("request failed: %v", err)
 				continue
 			}
-			defer resp.Body.Close()
+			if err := resp.Body.Close(); err != nil {
+				log.Println(err)
+			}
 			result := Result{
 				Link:       v,
 				StatusCode: resp.StatusCode,
 				T:          time.Now(),
 				Payload:    payload,
 				Comment:    fmt.Sprintf("%s", *method),
+				Header:     resp.Header,
 			}
 			results = append(results, result)
 		}
