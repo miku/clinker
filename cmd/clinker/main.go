@@ -104,7 +104,6 @@ func worker(queue chan []string, resultc chan []Result, wg *sync.WaitGroup) {
 						T:       time.Now(),
 						Comment: err.Error(),
 						Payload: payload,
-						Header:  resp.Header,
 					}
 					results = append(results, result)
 					log.Printf("request failed: %v", err)
