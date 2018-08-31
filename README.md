@@ -1,7 +1,7 @@
 # clinker
 
-A command line link checker using HTTP HEAD (prerelease [linux
-binary](https://github.com/miku/clinker/releases/tag/v0.0.0)).
+A command line link checker (prerelease [linux
+binary](https://github.com/miku/clinker/releases)).
 
 ```json
 $ echo '{"url": "http://ub.uni-leipzig.de"}' | clinker | jq .
