@@ -96,7 +96,7 @@ func worker(queue chan []string, resultc chan []Result, wg *sync.WaitGroup) {
 					log.Printf("failed to create request: %v", err)
 					continue
 				}
-				req.Header.Set("User-Agent", "clinker/%s (https://git.io/fAC27)", Version)
+				req.Header.Set("User-Agent", fmt.Sprintf("clinker/%s (https://git.io/fAC27)", Version))
 				resp, err := client.Do(req)
 				if err != nil {
 					result := Result{
