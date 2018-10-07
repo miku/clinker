@@ -28,6 +28,14 @@ var (
 	showVersion = flag.Bool("version", false, "show version")
 )
 
+// prependSchema if missing.
+func prependSchema(s string) string {
+	if strings.HasPrefix(s, "http") {
+		return s
+	}
+	return fmt.Sprintf("http://%s", s)
+}
+
 // worker is a vanilla worker working on batches of lines. Each line can result
 // in zero, one or more links to be checked.
 func worker(queue chan []string, resultc chan []Result, wg *sync.WaitGroup) {
@@ -182,6 +190,13 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		line = strings.TrimSpace(line)
+
+		// Allows plain URL list of be handled as well.
+		if !strings.HasPrefix(line, "{") {
+			line = fmt.Sprintf(`{"url": %q}`, prependSchema(line))
+		}
+
 		if len(batch) == *batchSize {
 			// XXX: required?
 			b := make([]string, *batchSize)
