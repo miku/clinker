@@ -28,6 +28,20 @@ var (
 	showVersion = flag.Bool("version", false, "show version")
 )
 
+// ArrayFlags allows to store lists of flag values.
+type ArrayFlags []string
+
+// String representation.
+func (f *ArrayFlags) String() string {
+	return strings.Join(*f, ", ")
+}
+
+// Set appends a value.
+func (f *ArrayFlags) Set(value string) error {
+	*f = append(*f, value)
+	return nil
+}
+
 // prependSchema if missing.
 func prependSchema(s string) string {
 	if strings.HasPrefix(s, "http") {
@@ -38,7 +52,7 @@ func prependSchema(s string) string {
 
 // worker is a vanilla worker working on batches of lines. Each line can result
 // in zero, one or more links to be checked.
-func worker(queue chan []string, resultc chan []Result, wg *sync.WaitGroup) {
+func worker(queue chan []string, headers http.Header, resultc chan []Result, wg *sync.WaitGroup) {
 	defer wg.Done()
 	client := http.DefaultClient
 
@@ -105,6 +119,11 @@ func worker(queue chan []string, resultc chan []Result, wg *sync.WaitGroup) {
 					continue
 				}
 				req.Header.Set("User-Agent", fmt.Sprintf("clinker/%s (https://git.io/fAC27)", Version))
+				for k, vs := range headers {
+					for _, v := range vs {
+						req.Header.Add(k, v)
+					}
+				}
 				resp, err := client.Do(req)
 				if err != nil {
 					result := Result{
@@ -121,12 +140,13 @@ func worker(queue chan []string, resultc chan []Result, wg *sync.WaitGroup) {
 					log.Println(err)
 				}
 				result := Result{
-					Link:       v,
-					StatusCode: resp.StatusCode,
-					T:          time.Now(),
-					Payload:    payload,
-					Comment:    fmt.Sprintf("%s", *method),
-					Header:     resp.Header,
+					RequestHeaders: headers,
+					Link:           v,
+					StatusCode:     resp.StatusCode,
+					T:              time.Now(),
+					Payload:        payload,
+					Comment:        fmt.Sprintf("%s", *method),
+					Headers:        resp.Header,
 				}
 				results = append(results, result)
 			}
@@ -148,15 +168,19 @@ func writer(w io.Writer, resultc chan []Result, done chan bool) {
 
 // Result of a link check.
 type Result struct {
-	Link       string      `json:"link,omitempty"`
-	StatusCode int         `json:"status,omitempty"`
-	T          time.Time   `json:"t,omitempty"`
-	Comment    string      `json:"comment,omitempty"`
-	Payload    interface{} `json:"payload,omitempty"`
-	Header     http.Header `json:"header,omitempty"`
+	Link           string      `json:"link,omitempty"`
+	RequestHeaders http.Header `json:"h,omitempty"`
+	StatusCode     int         `json:"status,omitempty"`
+	T              time.Time   `json:"t,omitempty"`
+	Comment        string      `json:"comment,omitempty"`
+	Payload        interface{} `json:"payload,omitempty"`
+	Headers        http.Header `json:"headers,omitempty"`
 }
 
 func main() {
+	var headerFlags ArrayFlags
+	flag.Var(&headerFlags, "H", "HTTP header to send (repeatable)")
+
 	flag.Parse()
 
 	if *showVersion {
@@ -172,11 +196,20 @@ func main() {
 	resultc := make(chan []Result)
 	done := make(chan bool)
 
+	var headers = make(http.Header)
+	for _, hf := range headerFlags {
+		parts := strings.SplitN(hf, ":", 2)
+		if len(parts) != 2 {
+			log.Fatal("header must be in key:value format, not %s", hf)
+		}
+		headers.Add(parts[0], parts[1])
+	}
+
 	var wg sync.WaitGroup
 
 	for i := 0; i < *numWorkers; i++ {
 		wg.Add(1)
-		go worker(queue, resultc, &wg)
+		go worker(queue, headers, resultc, &wg)
 	}
 	go writer(bw, resultc, done)
 
