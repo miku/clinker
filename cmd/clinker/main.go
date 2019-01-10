@@ -202,7 +202,7 @@ func main() {
 		if len(parts) != 2 {
 			log.Fatal("header must be in key:value format, not %s", hf)
 		}
-		headers.Add(parts[0], parts[1])
+		headers.Add(strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1]))
 	}
 
 	var wg sync.WaitGroup
