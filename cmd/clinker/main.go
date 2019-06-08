@@ -27,6 +27,7 @@ var (
 	bestEffort  = flag.Bool("b", false, "skip invalid input")
 	batchSize   = flag.Int("size", 100, "batch urls")
 	showVersion = flag.Bool("version", false, "show version")
+	userAgent   = flag.String("ua", fmt.Sprintf("clinker/%s (https://git.io/fAC27)", Version), "use a specific user agent")
 )
 
 // ArrayFlags allows to store lists of flag values.
@@ -125,7 +126,7 @@ func worker(queue chan []string, headers http.Header, resultc chan []Result, wg 
 					log.Printf("failed to create request: %v", err)
 					continue
 				}
-				req.Header.Set("User-Agent", fmt.Sprintf("clinker/%s (https://git.io/fAC27)", Version))
+				req.Header.Set("User-Agent", *userAgent)
 				for k, vs := range headers {
 					for _, v := range vs {
 						req.Header.Add(k, v)
