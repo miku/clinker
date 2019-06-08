@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sethgrid/pester"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -54,7 +55,13 @@ func prependSchema(s string) string {
 // in zero, one or more links to be checked.
 func worker(queue chan []string, headers http.Header, resultc chan []Result, wg *sync.WaitGroup) {
 	defer wg.Done()
-	client := http.DefaultClient
+
+	client := pester.New()
+	client.Concurrency = 3
+	client.MaxRetries = 5
+	client.Backoff = pester.ExponentialBackoff
+	client.KeepLog = false
+	client.Timeout = 30 * time.Second
 
 	for batch := range queue {
 		for _, line := range batch {
