@@ -20,15 +20,25 @@ import (
 var Version = "0.2.3"
 
 var (
-	method      = flag.String("X", "GET", "HTTP method")
-	urlKey      = flag.String("j", "url", "key under which to find the URLs to check")
-	verbose     = flag.Bool("verbose", false, "verbose output")
-	numWorkers  = flag.Int("w", runtime.NumCPU(), "number of workers")
-	bestEffort  = flag.Bool("b", false, "skip invalid input")
-	batchSize   = flag.Int("size", 100, "batch urls")
-	showVersion = flag.Bool("version", false, "show version")
-	userAgent   = flag.String("ua", fmt.Sprintf("clinker/%s (https://git.io/fAC27)", Version), "use a specific user agent")
+	method        = flag.String("X", "GET", "HTTP method")
+	urlKey        = flag.String("j", "url", "key under which to find the URLs to check")
+	verbose       = flag.Bool("verbose", false, "verbose output")
+	numWorkers    = flag.Int("w", runtime.NumCPU(), "number of workers")
+	bestEffort    = flag.Bool("b", false, "skip invalid input")
+	batchSize     = flag.Int("size", 100, "batch urls")
+	showVersion   = flag.Bool("version", false, "show version")
+	userAgent     = flag.String("ua", fmt.Sprintf("clinker/%s (https://git.io/fAC27)", Version), "use a specific user agent")
+	headerProfile = flag.String("hp", "", "use additional header profile")
 )
+
+var headerProfiles = map[string]map[string]string{
+	"basic": map[string]string{
+		"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+		"Accept-Language": "en-US,en;q=0.5",
+		"Accept-Encoding": "gzip, deflate, br",
+		"DNT":             "1",
+	},
+}
 
 // ArrayFlags allows to store lists of flag values.
 type ArrayFlags []string
@@ -211,6 +221,11 @@ func main() {
 			log.Fatal("header must be in key:value format, not %s", hf)
 		}
 		headers.Add(strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1]))
+	}
+	if profile, ok := headerProfiles[*headerProfile]; ok {
+		for k, v := range profile {
+			headers.Add(k, v)
+		}
 	}
 
 	var wg sync.WaitGroup
