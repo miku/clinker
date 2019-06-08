@@ -136,7 +136,6 @@ func worker(queue chan []string, headers http.Header, resultc chan []Result, wg 
 					log.Printf("failed to create request: %v", err)
 					continue
 				}
-				req.Header.Set("User-Agent", *userAgent)
 				for k, vs := range headers {
 					for _, v := range vs {
 						req.Header.Add(k, v)
@@ -227,6 +226,7 @@ func main() {
 			headers.Add(k, v)
 		}
 	}
+	headers.Add("User-Agent", *userAgent)
 
 	var wg sync.WaitGroup
 
