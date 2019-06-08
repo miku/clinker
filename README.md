@@ -148,3 +148,10 @@ $ jq -rc '.header|keys[]' endpoints.ndj 2> /dev/null | sort | uniq -c | sort -nr
      11 Host-Header
 ```
 
+More examples:
+
+```
+$ solrdump -server 10.0.1.1:8085/solr/biblio -fl id,url |
+    jq -rc '. as $doc | .url[] | . as $link | {"id": $doc.id, "url": $link}' |
+    clinker -verbose -w 128
+```
