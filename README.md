@@ -15,7 +15,8 @@ $ go get github.com/miku/clinker/...
 
 ## Usage
 
-The clinker tool reads input from stdin and emits output to stdout. The input can a list of URLs, one per line:
+The clinker tool reads input from stdin and emits output to stdout (one JSON
+result per line). The input can a list of URLs, one per line:
 
 ```
 $ echo golang.org | clinker | jq
@@ -139,6 +140,32 @@ $ echo '{"url": "http://google.com"}' | clinker | jq .
     ]
   }
 }
+```
+
+## Flags
+
+```
+$ clinker -h
+Usage of clinker:
+  -H value
+        HTTP header to send (repeatable)
+  -X string
+        HTTP method (default "GET")
+  -b    skip invalid input
+  -hp string
+        use additional header profile
+  -j string
+        key under which to find the URLs to check (default "url")
+  -size int
+        batch urls (default 100)
+  -ua string
+        use a specific user agent (default "clinker/0.2.4 (https://git.io/fAC27)")
+  -verbose
+        verbose output
+  -version
+        show version
+  -w int
+        number of workers (default 4)
 ```
 
 ## Checking links in an SOLR index
