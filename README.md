@@ -1,7 +1,67 @@
 # clinker
 
-A command line link checker (prerelease [linux
-binary](https://github.com/miku/clinker/releases)).
+A command line link checker. The clinker tool allows to run basic link checks
+on a large number of links fast.
+
+## Installation
+
+Currently, we provide a [precompiled amd64
+binary](github.com/miku/clinker/releases). To install on other platforms,
+you'll need the [Go toolchain](https://golang.org/doc/install).
+
+```
+$ go get github.com/miku/clinker/...
+```
+
+## Usage
+
+The clinker tool reads input from stdin and emits output to stdout. The input can a list of URLs, one per line:
+
+```
+$ echo golang.org | clinker | jq
+{
+  "link": "http://golang.org",
+  "h": {
+    "User-Agent": [
+      "clinker/0.2.4 (https://git.io/fAC27)"
+    ]
+  },
+  "status": 200,
+  "t": "2019-06-11T17:01:30.836445813+02:00",
+  "comment": "GET",
+  "payload": {
+    "url": "http://golang.org"
+  },
+  "headers": {
+    "Alt-Svc": [
+      "quic=\":443\"; ma=2592000; v=\"46,44,43,39\""
+    ],
+    "Content-Type": [
+      "text/html; charset=utf-8"
+    ],
+    "Date": [
+      "Tue, 11 Jun 2019 15:02:01 GMT"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=31536000; includeSubDomains; preload"
+    ],
+    "Vary": [
+      "Accept-Encoding"
+    ],
+    "Via": [
+      "1.1 google"
+    ]
+  }
+}
+```
+
+Additionally, the clinker tools allows to work with JSON data as input as well.
+By default, if will find the URL in the *url* field (you can override the field
+name with the -j flag).
+
+This way, we can take a document and wrap link check information around it. The
+original document will be fully preserved under the *payload* key.
+
 
 ```json
 $ echo '{"url": "http://ub.uni-leipzig.de"}' | clinker | jq .
