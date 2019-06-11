@@ -181,7 +181,7 @@ $ solrdump -q "source_id:169" -fl "id,url" -server 10.1.1.1:1234/solr/biblio | c
 Generate report, run some stats.
 
 ```
-$ curl -sL https://git.io/vKXFv | clinker -w 200 > endpoints.ndj
+$ curl -sL https://git.io/vKXFv | clinker -verbose -w 200 > endpoints.ndj
 $ jq -rc '.header|keys[]' endpoints.ndj 2> /dev/null | sort | uniq -c | sort -nr | head -50
    4316 Content-Type
    4314 Date
