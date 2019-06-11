@@ -74,6 +74,8 @@ func worker(queue chan []string, headers http.Header, resultc chan []Result, wg 
 	client.KeepLog = false
 	client.Timeout = 30 * time.Second
 
+	var started time.Time
+
 	for batch := range queue {
 		for _, line := range batch {
 
@@ -141,6 +143,7 @@ func worker(queue chan []string, headers http.Header, resultc chan []Result, wg 
 						req.Header.Add(k, v)
 					}
 				}
+				started = time.Now()
 				resp, err := client.Do(req)
 				if err != nil {
 					result := Result{
@@ -148,6 +151,7 @@ func worker(queue chan []string, headers http.Header, resultc chan []Result, wg 
 						T:       time.Now(),
 						Comment: err.Error(),
 						Payload: payload,
+						Elapsed: time.Since(started),
 					}
 					results = append(results, result)
 					log.Printf("request failed: %v", err)
@@ -164,6 +168,7 @@ func worker(queue chan []string, headers http.Header, resultc chan []Result, wg 
 					Payload:        payload,
 					Comment:        fmt.Sprintf("%s", *method),
 					Headers:        resp.Header,
+					Elapsed:        time.Since(started),
 				}
 				results = append(results, result)
 			}
@@ -185,13 +190,14 @@ func writer(w io.Writer, resultc chan []Result, done chan bool) {
 
 // Result of a link check.
 type Result struct {
-	Link           string      `json:"link,omitempty"`
-	RequestHeaders http.Header `json:"h,omitempty"`
-	StatusCode     int         `json:"status,omitempty"`
-	T              time.Time   `json:"t,omitempty"`
-	Comment        string      `json:"comment,omitempty"`
-	Payload        interface{} `json:"payload,omitempty"`
-	Headers        http.Header `json:"headers,omitempty"`
+	Link           string        `json:"link,omitempty"`
+	RequestHeaders http.Header   `json:"h,omitempty"`
+	StatusCode     int           `json:"status,omitempty"`
+	T              time.Time     `json:"t,omitempty"`
+	Elapsed        time.Duration `json:"elapsed,omitempty"`
+	Comment        string        `json:"comment,omitempty"`
+	Payload        interface{}   `json:"payload,omitempty"`
+	Headers        http.Header   `json:"headers,omitempty"`
 }
 
 func main() {
