@@ -6,7 +6,7 @@ on a large number of links fast.
 ## Installation
 
 Currently, we provide a [precompiled amd64
-binary](github.com/miku/clinker/releases). To install on other platforms,
+binary](https://github.com/miku/clinker/releases). To install on other platforms,
 you'll need the [Go toolchain](https://golang.org/doc/install).
 
 ```
