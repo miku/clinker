@@ -3,6 +3,8 @@
 A command line link checker. The clinker tool allows to run basic link checks
 on a large number of links fast.
 
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+
 ## Installation
 
 Currently, we provide a [precompiled amd64
