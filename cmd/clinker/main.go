@@ -73,6 +73,7 @@ func worker(queue chan []string, headers http.Header, resultc chan []Result, wg 
 	client.Backoff = pester.ExponentialBackoff
 	client.KeepLog = false
 	client.Timeout = 30 * time.Second
+	client.SetRetryOnHTTP429(true)
 
 	var started time.Time
 
