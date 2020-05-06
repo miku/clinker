@@ -17,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var Version = "0.2.5"
+var Version = "0.2.6"
 
 var (
 	method        = flag.String("X", "GET", "HTTP method")
