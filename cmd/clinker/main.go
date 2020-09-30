@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
@@ -68,14 +69,29 @@ func prependSchema(s string) string {
 func worker(queue chan []string, headers http.Header, resultc chan []Result, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	client := pester.New()
+	// Use extended client, so we can skip certificate validation.
+	client := pester.NewExtendedClient(&http.Client{Transport: &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}})
 	client.Concurrency = 3
 	client.MaxRetries = 5
 	client.Backoff = pester.ExponentialBackoff
 	client.KeepLog = false
 	client.Timeout = 30 * time.Second
 	client.SetRetryOnHTTP429(true)
-	client.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	var started time.Time
 
