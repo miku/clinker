@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -74,6 +75,7 @@ func worker(queue chan []string, headers http.Header, resultc chan []Result, wg 
 	client.KeepLog = false
 	client.Timeout = 30 * time.Second
 	client.SetRetryOnHTTP429(true)
+	client.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	var started time.Time
 
