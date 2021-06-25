@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/miku/clinker/xflag"
 	"github.com/sethgrid/pester"
 	log "github.com/sirupsen/logrus"
 )
@@ -42,21 +43,6 @@ var headerProfiles = map[string]map[string]string{
 	},
 }
 
-// ArrayFlags allows to store lists of flag values.
-type ArrayFlags []string
-
-// String representation.
-func (f *ArrayFlags) String() string {
-	return strings.Join(*f, ", ")
-}
-
-// Set appends a value.
-func (f *ArrayFlags) Set(value string) error {
-	*f = append(*f, value)
-	return nil
-}
-
-// prependSchema if missing.
 func prependSchema(s string) string {
 	if strings.HasPrefix(s, "http") {
 		return s
@@ -64,28 +50,65 @@ func prependSchema(s string) string {
 	return fmt.Sprintf("http://%s", s)
 }
 
+// RedirectRecorder records intermediate requests.
+type RedirectRecorder struct {
+	Reqs []*http.Request
+}
+
+func (rr *RedirectRecorder) Record(req *http.Request, via []*http.Request) error {
+	rr.Reqs = via
+	return nil
+}
+
+func (rr *RedirectRecorder) Reset() {
+	rr.Reqs = nil
+}
+
+type RedirectEntry struct {
+	Status int    `json:"status"`
+	URL    string `json:"url"`
+}
+
+func (rr *RedirectRecorder) Entries() (entries []*RedirectEntry) {
+	for i, r := range rr.Reqs {
+		if i == 0 {
+			continue
+		}
+		entry := &RedirectEntry{
+			URL:    r.URL.String(),
+			Status: r.Response.StatusCode,
+		}
+		entries = append(entries, entry)
+	}
+	return entries
+}
+
 // worker is a vanilla worker working on batches of lines. Each line can result
 // in zero, one or more links to be checked.
 func worker(queue chan []string, headers http.Header, resultc chan []Result, wg *sync.WaitGroup) {
 	defer wg.Done()
 
+	redirectRecorder := RedirectRecorder{}
 	// Use extended client, so we can skip certificate validation.
-	client := pester.NewExtendedClient(&http.Client{Transport: &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-			DualStack: true,
-		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
+	client := pester.NewExtendedClient(&http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+				DualStack: true,
+			}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
 		},
-	}})
+		CheckRedirect: redirectRecorder.Record,
+	})
 	client.Concurrency = 3
 	client.MaxRetries = 5
 	client.Backoff = pester.ExponentialBackoff
@@ -188,8 +211,10 @@ func worker(queue chan []string, headers http.Header, resultc chan []Result, wg 
 					Comment:        fmt.Sprintf("%s", *method),
 					Headers:        resp.Header,
 					Elapsed:        time.Since(started),
+					Redirects:      redirectRecorder.Entries(),
 				}
 				results = append(results, result)
+				redirectRecorder.Reset()
 			}
 			resultc <- results
 		}
@@ -209,18 +234,19 @@ func writer(w io.Writer, resultc chan []Result, done chan bool) {
 
 // Result of a link check.
 type Result struct {
-	Link           string        `json:"link,omitempty"`
-	RequestHeaders http.Header   `json:"h,omitempty"`
-	StatusCode     int           `json:"status,omitempty"`
-	T              time.Time     `json:"t,omitempty"`
-	Elapsed        time.Duration `json:"elapsed,omitempty"`
-	Comment        string        `json:"comment,omitempty"`
-	Payload        interface{}   `json:"payload,omitempty"`
-	Headers        http.Header   `json:"headers,omitempty"`
+	Link           string           `json:"link,omitempty"`
+	RequestHeaders http.Header      `json:"h,omitempty"`
+	StatusCode     int              `json:"status,omitempty"`
+	T              time.Time        `json:"t,omitempty"`
+	Elapsed        time.Duration    `json:"elapsed,omitempty"`
+	Comment        string           `json:"comment,omitempty"`
+	Payload        interface{}      `json:"payload,omitempty"`
+	Headers        http.Header      `json:"headers,omitempty"`
+	Redirects      []*RedirectEntry `json:"redirects,omitempty"`
 }
 
 func main() {
-	var headerFlags ArrayFlags
+	var headerFlags xflag.ArrayFlags
 	flag.Var(&headerFlags, "H", "HTTP header to send (repeatable)")
 
 	flag.Parse()
