@@ -32,6 +32,7 @@ var (
 	showVersion   = flag.Bool("version", false, "show version")
 	userAgent     = flag.String("ua", fmt.Sprintf("clinker/%s (https://git.io/fAC27)", Version), "use a specific user agent")
 	headerProfile = flag.String("hp", "", "use additional header profile")
+	timeout       = flag.Duration("t", 30*time.Second, "client timeout")
 )
 
 var headerProfiles = map[string]map[string]string{
@@ -113,7 +114,7 @@ func worker(queue chan []string, headers http.Header, resultc chan []Result, wg 
 	client.MaxRetries = 5
 	client.Backoff = pester.ExponentialBackoff
 	client.KeepLog = false
-	client.Timeout = 30 * time.Second
+	client.Timeout = *timeout
 	client.SetRetryOnHTTP429(true)
 
 	var started time.Time
