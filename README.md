@@ -12,7 +12,7 @@ binary](https://github.com/miku/clinker/releases). To install on other platforms
 you'll need the [Go toolchain](https://golang.org/doc/install).
 
 ```
-$ go get github.com/miku/clinker/...
+$ go install github.com/miku/clinker/cmd/clinker@master
 ```
 
 ## Usage
