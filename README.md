@@ -18,7 +18,7 @@ $ go install github.com/miku/clinker/cmd/clinker@master
 ## Usage
 
 The clinker tool reads input from stdin and emits output to stdout (one JSON
-result per line). The input can a list of URLs, one per line:
+result per line). The input can be a list of URLs, one per line:
 
 ```
 $ echo golang.org | clinker | jq
@@ -59,11 +59,11 @@ $ echo golang.org | clinker | jq
 ```
 
 Additionally, the clinker tools allows to work with JSON data as input as well.
-By default, if will find the URL in the *url* field (you can override the field
+By default, it will find the URL in the *url* field (you can override the field
 name with the -j flag).
 
 This way, we can take a document and wrap link check information around it. The
-original document will be fully preserved under the *payload* key.
+original document will be preserved under the *payload* key.
 
 
 ```json
@@ -170,7 +170,7 @@ Usage of clinker:
         number of workers (default 4)
 ```
 
-## Checking links in an SOLR index
+## Checking links in a SOLR index
 
 Using in combination with [solrdump](https://github.com/ubleipzig/solrdump):
 
